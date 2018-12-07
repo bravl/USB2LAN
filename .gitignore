@@ -1,1 +1,3 @@
 mcu/USB2LAN/build
+*.swp
+*.pdf

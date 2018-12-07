@@ -3,34 +3,24 @@
 #include "lwip.h"
 #include "usb_device.h"
 
-SDRAM_HandleTypeDef hsdram1;
+DMA2D_HandleTypeDef hdma2d;
+LTDC_HandleTypeDef hltdc;
+RTC_HandleTypeDef hrtc;
 osThreadId defaultTaskHandle;
 
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 void StartDefaultTask(void const * argument);
 
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
- * @brief  The application entry point.
- * @retval int
- */
 int main(void)
 {
 	SCB_EnableICache();
 	SCB_EnableDCache();
 
 	HAL_Init();
+
 	SystemClock_Config();
+
 	MX_GPIO_Init();
 
 	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 4096);
@@ -38,18 +28,16 @@ int main(void)
 
 	osKernelStart();
 
+	/* Infinite loop */
 	while (1)
 	{
 	}
 }
 
-void Error_Handler()
-{
-	while(1){
-	
-	}
-}
-
+/**
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
 	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -97,9 +85,7 @@ void SystemClock_Config(void)
 	{
 		Error_Handler();
 	}
-	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_RTC
-		|RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART6
-		|RCC_PERIPHCLK_SDMMC1|RCC_PERIPHCLK_CLK48;
+	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_RTC;
 	PeriphClkInitStruct.PLLSAI.PLLSAIN = 384;
 	PeriphClkInitStruct.PLLSAI.PLLSAIR = 5;
 	PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
@@ -107,16 +93,17 @@ void SystemClock_Config(void)
 	PeriphClkInitStruct.PLLSAIDivQ = 1;
 	PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_8;
 	PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
-	PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
-	PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
-	PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
-	PeriphClkInitStruct.Sdmmc1ClockSelection = RCC_SDMMC1CLKSOURCE_CLK48;
 	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
 	{
 		Error_Handler();
 	}
 }
 
+/**
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_GPIO_Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -163,12 +150,32 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF9_QUADSPI;
 	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
+	/*Configure GPIO pins : PE1 PE0 PE8 PE9 
+	  PE11 PE14 PE7 PE10 
+	  PE12 PE15 PE13 */
+	GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_0|GPIO_PIN_8|GPIO_PIN_9 
+		|GPIO_PIN_11|GPIO_PIN_14|GPIO_PIN_7|GPIO_PIN_10 
+		|GPIO_PIN_12|GPIO_PIN_15|GPIO_PIN_13;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
 	/*Configure GPIO pins : PB8 PB9 */
 	GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
 	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PB4 */
+	GPIO_InitStruct.Pin = GPIO_PIN_4;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 	/*Configure GPIO pin : PD7 */
@@ -179,6 +186,24 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF8_SPDIFRX;
 	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+	/*Configure GPIO pins : PC12 PC11 PC10 PC9 
+	  PC8 */
+	GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_11|GPIO_PIN_10|GPIO_PIN_9 
+		|GPIO_PIN_8;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PA15 */
+	GPIO_InitStruct.Pin = GPIO_PIN_15;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
 	/*Configure GPIO pins : PE5 PE6 */
 	GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6;
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -187,6 +212,14 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF13_DCMI;
 	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
+	/*Configure GPIO pin : PB7 */
+	GPIO_InitStruct.Pin = GPIO_PIN_7;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
 	/*Configure GPIO pin : PB6 */
 	GPIO_InitStruct.Pin = GPIO_PIN_6;
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -194,6 +227,16 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 	GPIO_InitStruct.Alternate = GPIO_AF10_QUADSPI;
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	/*Configure GPIO pins : PG15 PG8 PG1 PG0 
+	  PG5 PG4 */
+	GPIO_InitStruct.Pin = GPIO_PIN_15|GPIO_PIN_8|GPIO_PIN_1|GPIO_PIN_0 
+		|GPIO_PIN_5|GPIO_PIN_4;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+	HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
 	/*Configure GPIO pin : PJ12 */
 	GPIO_InitStruct.Pin = GPIO_PIN_12;
@@ -205,6 +248,16 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Pin = GPIO_PIN_6;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+	/*Configure GPIO pins : PD0 PD1 PD15 PD10 
+	  PD14 PD9 PD8 */
+	GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_15|GPIO_PIN_10 
+		|GPIO_PIN_14|GPIO_PIN_9|GPIO_PIN_8;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
 	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 	/*Configure GPIO pins : PA12 PA11 PA10 */
@@ -259,6 +312,18 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+	/*Configure GPIO pins : PF0 PF1 PF2 PF3 
+	  PF4 PF5 PF12 PF15 
+	  PF13 PF14 PF11 */
+	GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3 
+		|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_12|GPIO_PIN_15 
+		|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_11;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+	HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
 	/*Configure GPIO pin : PK3 */
 	GPIO_InitStruct.Pin = GPIO_PIN_3;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -278,6 +343,14 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Pin = GPIO_PIN_4;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PD2 */
+	GPIO_InitStruct.Pin = GPIO_PIN_2;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
 	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 	/*Configure GPIO pins : PH15 PH2 */
@@ -311,11 +384,51 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Alternate = GPIO_AF13_DCMI;
 	HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
 
+	/*Configure GPIO pin : PI0 */
+	GPIO_InitStruct.Pin = GPIO_PIN_0;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	GPIO_InitStruct.Alternate = GPIO_AF2_TIM5;
+	HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PA9 */
+	GPIO_InitStruct.Pin = GPIO_PIN_9;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PA8 */
+	GPIO_InitStruct.Pin = GPIO_PIN_8;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
 	/*Configure GPIO pin : PI13 */
 	GPIO_InitStruct.Pin = GPIO_PIN_13;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
+
+	/*Configure GPIO pins : PC7 PC6 */
+	GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_6;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF8_USART6;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	/*Configure GPIO pins : PH5 PH3 */
+	GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_3;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+	HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
 
 	/*Configure GPIO pins : PG7 PG6 PG3 */
 	GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_6|GPIO_PIN_3;
@@ -331,6 +444,14 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PC3 */
+	GPIO_InitStruct.Pin = GPIO_PIN_3;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 	/*Configure GPIO pin : PB2 */
 	GPIO_InitStruct.Pin = GPIO_PIN_2;
@@ -402,6 +523,26 @@ void StartDefaultTask(void const * argument)
 
 	for(;;)
 	{
+		printf("test\r\n");
 		osDelay(1);
 	}
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if (htim->Instance == TIM6) {
+		HAL_IncTick();
+	}
+}
+
+/**
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void)
+{
+	/* USER CODE BEGIN Error_Handler_Debug */
+	/* User can add his own implementation to report the HAL error return state */
+
+	/* USER CODE END Error_Handler_Debug */
 }
