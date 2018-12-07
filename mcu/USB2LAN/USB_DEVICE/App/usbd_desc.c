@@ -91,14 +91,14 @@
   * @{
   */
 
-#define USBD_VID     1155
+#define USBD_VID     0xFBCE
 #define USBD_LANGID_STRING     1033
-#define USBD_MANUFACTURER_STRING     "STMicroelectronics"
-#define USBD_PID_HS     22352
-#define USBD_PRODUCT_STRING_HS     "STM32 Custom Human interface"
-#define USBD_SERIALNUMBER_STRING_HS     "00000000001A"
-#define USBD_CONFIGURATION_STRING_HS     "Custom HID Config"
-#define USBD_INTERFACE_STRING_HS     "Custom HID Interface"
+#define USBD_MANUFACTURER_STRING     "Open Pixel Systems"
+#define USBD_PID_HS     00001
+#define USBD_PRODUCT_STRING_HS     "OPS USB2LAN Device"
+#define USBD_SERIALNUMBER_STRING_HS     "000000000001"
+#define USBD_CONFIGURATION_STRING_HS     "USB2LAN HID device"
+#define USBD_INTERFACE_STRING_HS     "Custom HID USB2LAN"
 
 #define USB_SIZ_BOS_DESC            0x0C
 
@@ -190,7 +190,7 @@ __ALIGN_BEGIN uint8_t USBD_HS_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END =
   0x02,
   0x00,                       /*bDeviceClass*/
   0x00,                       /*bDeviceSubClass*/
-  0x00,                       /*bDeviceProtocol*/
+  0xff,                       /*bDeviceProtocol*/
   USB_MAX_EP0_SIZE,           /*bMaxPacketSize*/
   LOBYTE(USBD_VID),           /*idVendor*/
   HIBYTE(USBD_VID),           /*idVendor*/
