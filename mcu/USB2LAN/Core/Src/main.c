@@ -517,13 +517,12 @@ static void MX_GPIO_Init(void)
 
 void StartDefaultTask(void const * argument)
 {
-	MX_LWIP_Init();
-
+	// MX_LWIP_Init();
 	MX_USB_DEVICE_Init();
 
 	for(;;)
 	{
-		printf("test\r\n");
+		// printf("test\r\n");
 		osDelay(1);
 	}
 }
